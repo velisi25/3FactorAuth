@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">3FactorAuthentication</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="sign_in">Sign In</string>
+    <string name="title_activity_registration_page">RegistrationPage</string>
+    <string name="clear_btn">Clear</string>
+    <string name="submit_btn">Submit</string>
+</resources>
