@@ -32,7 +32,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,7 +65,6 @@ class PhoneNoVerification:ComponentActivity(){
         super.onCreate(savedInstanceState)
         auth = FirebaseAuth.getInstance()
         setContent {
-            val context = LocalContext.current
             _3FactorAuthenticationTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -112,7 +110,6 @@ fun Verify(){
 @Composable
 fun Verification() {
     val auth = FirebaseAuth.getInstance()
-    val activity = LocalActivity.current
     var showOtpDialog by remember{ mutableStateOf(false) }
     var verificationId by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
@@ -164,13 +161,14 @@ fun Verification() {
 @Composable
 fun OtpDialog(auth: FirebaseAuth,verificationId: String,otp:String,onDismiss: () -> Unit,onVerifyClick:()->Unit) {
     val context = LocalContext.current
+    val otpStringBuilder = remember{StringBuilder(otp)}
     AlertDialog(
         onDismissRequest = { onDismiss() },
         title = { Text(text = "Enter OTP", fontSize = 20.sp) },
         confirmButton = {
             Button(
                 onClick = {
-                    verifyOtp(auth,verificationId,otp,context )
+                    verifyOtp(auth,verificationId,otpStringBuilder.toString(),context )
                           onVerifyClick()
                           },
                 modifier = Modifier.padding(top = 8.dp)
@@ -184,27 +182,31 @@ fun OtpDialog(auth: FirebaseAuth,verificationId: String,otp:String,onDismiss: ()
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val focusRequesters = List(6){FocusRequester.Default}
-                // Create 6 text fields for OTP input
-                repeat(6) { index ->
+                val otpFields = List(6) {FocusRequester()}
+                for(index in otpFields.indices){
                     OutlinedTextField(
-                        value = "",
+                        value = otpStringBuilder.getOrNull(index)?.toString()?:"",
                         onValueChange = {newValue->
-                            if (index < focusRequesters.size - 1) {
-                                focusRequesters[index + 1].requestFocus()
+                            if (index < otpFields.size -1 && newValue.isNotEmpty()) {
+                                otpFields[index+1].requestFocus()
+                            }
+                            if (newValue.length <= 1) {
+                                otpStringBuilder.replace(index, index + 1, newValue)
                             }
                         },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp)
-                            .focusRequester(focusRequesters[index])
+                            .focusRequester(otpFields[index])
                     )
                 }
             }
         }
     )
 }
+
 
 private fun initiatePhoneAuth(
     auth:FirebaseAuth, phoneNumber: String, currentActivity: ComponentActivity,onVerficationIdSent:(String)->Unit) {
@@ -227,6 +229,7 @@ private fun initiatePhoneAuth(
                 ) {
                     // Store verificationId to use when verifying the OTP
                     onVerficationIdSent(verificationId)
+                    println(verificationId)
                     // You can also store the verificationId in a ViewModel or similar
                 }
             })
