@@ -35,39 +35,43 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.a3factorauthentication.ui.theme._3FactorAuthenticationTheme
-import java.time.LocalDate
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavController
+import com.example.a3factorauthentication.features.firebaseauth.screens.PhoneNoVerification
+import com.example.a3factorauthentication.ui.theme._3FactorAuthenticationTheme
 import com.google.firebase.database.FirebaseDatabase
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 data class User(
     val name: String,
@@ -100,7 +104,7 @@ class RegistrationPage : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegPage(activity: ComponentActivity){
-    Log.d("RegPage","Regpage function called")
+    val navController = rememberNavController()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -117,22 +121,28 @@ fun RegPage(activity: ComponentActivity){
             )
         },
         content={
-            FormPage(activity)
+            NavHost(navController = navController, startDestination = "registration") {
+            composable("registration") {
+                FormPage(activity,navController)
+            }
+            composable("phoneVerification") {
+                PhoneNoVerification(activity) // Replace this with the actual PhoneNoVerification composable
+            }
+        }
         }
     )
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun FormPage(activity: ComponentActivity){
-    Log.d("FormPage","Formpage function called")
+fun FormPage(activity: ComponentActivity,navController:NavController){
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-        TextField(activity)
+        TextField(activity,navController)
     }
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TextField(activity: ComponentActivity){
+fun TextField(activity: ComponentActivity,navController: NavController){
     Column(modifier=Modifier.padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         var text by remember { mutableStateOf(TextFieldValue("")) }
         var isError by remember { mutableStateOf(true) }
@@ -333,10 +343,10 @@ fun TextField(activity: ComponentActivity){
                     newUserRef.setValue(user)
 
 
-                    val context = activity
-                    val intent = Intent(context,PhoneNoVerification::class.java)
-                    ContextCompat.startActivity(context,intent,null)
-
+                    //val context = activity
+                    //val intent = Intent(context,PhoneNoVerification::class.java)
+                    //ContextCompat.startActivity(context,intent,null)
+                    navController.navigate("phoneVerification")
                 }
                 else{
                     Log.d("ButtonClick","Conditions doesn't met")
