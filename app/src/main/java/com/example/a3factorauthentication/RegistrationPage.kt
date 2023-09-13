@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -58,20 +59,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.navigation.NavController
-import com.example.a3factorauthentication.features.firebaseauth.screens.PhoneNoVerification
 import com.example.a3factorauthentication.ui.theme._3FactorAuthenticationTheme
 import com.google.firebase.database.FirebaseDatabase
-import com.maxkeppeker.sheets.core.models.base.rememberSheetState
+import com.maxkeppeker.sheets.core.models.base.UseCaseState
+import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+
 
 data class User(
     val name: String,
@@ -104,7 +101,6 @@ class RegistrationPage : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegPage(activity: ComponentActivity){
-    val navController = rememberNavController()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -121,28 +117,21 @@ fun RegPage(activity: ComponentActivity){
             )
         },
         content={
-            NavHost(navController = navController, startDestination = "registration") {
-            composable("registration") {
-                FormPage(activity,navController)
-            }
-            composable("phoneVerification") {
-                PhoneNoVerification(activity) // Replace this with the actual PhoneNoVerification composable
-            }
-        }
+            FormPage(activity)
         }
     )
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun FormPage(activity: ComponentActivity,navController:NavController){
+fun FormPage(activity: ComponentActivity){
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-        TextField(activity,navController)
+        TextField(activity)
     }
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TextField(activity: ComponentActivity,navController: NavController){
+fun TextField(activity: ComponentActivity){
     Column(modifier=Modifier.padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         var text by remember { mutableStateOf(TextFieldValue("")) }
         var isError by remember { mutableStateOf(true) }
@@ -162,7 +151,7 @@ fun TextField(activity: ComponentActivity,navController: NavController){
         }
         Spacer(modifier = Modifier.padding(3.dp))
         var selectedDate by remember{ mutableStateOf<LocalDate?>(null) }
-        val calendarState = rememberSheetState()
+        val calendarState = rememberUseCaseState()
         LaunchedEffect(selectedDate) {
             Log.d("SelectedDate", "Date changed: $selectedDate")
         }
@@ -343,10 +332,9 @@ fun TextField(activity: ComponentActivity,navController: NavController){
                     newUserRef.setValue(user)
 
 
-                    //val context = activity
-                    //val intent = Intent(context,PhoneNoVerification::class.java)
-                    //ContextCompat.startActivity(context,intent,null)
-                    navController.navigate("phoneVerification")
+                    val context = activity
+                    val intent = Intent(context, PhoneNoVerification::class.java)
+                    ContextCompat.startActivity(context,intent,null)
                 }
                 else{
                     Log.d("ButtonClick","Conditions doesn't met")

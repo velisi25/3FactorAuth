@@ -19,8 +19,8 @@
         android:name =".ui.MyApp">
         <activity
             android:name=".PhoneNoVerification"
-            android:exported="false"
-            android:label="PhoneNoVerification"
+            android:exported="true"
+            android:label="PhoneNoVerificationPage"
             android:theme="@style/Theme._3FactorAuthentication" />
         <activity
             android:name=".RegistrationPage"
