@@ -53,20 +53,28 @@ import com.google.firebase.auth.PhoneAuthProvider
 import java.util.concurrent.TimeUnit
 import android.content.Context
 import android.app.Activity
+import android.content.Intent
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.example.a3factorauthentication.utils.getActivity
+import com.google.firebase.database.FirebaseDatabase
+import com.example.a3factorauthentication.User
+
+
+
 
 class PhoneNoVerification : ComponentActivity(){
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val userId = intent.getStringExtra("userId") ?: ""
         setContent {
             _3FactorAuthenticationTheme {
                 Surface (
                     modifier = Modifier.fillMaxSize(),
                     color = colorResource(id = R.color.purple_200)
                 ){
-                    LoginDialog()
+                    LoginDialog(userId)
                 }
             }
         }
@@ -75,11 +83,11 @@ class PhoneNoVerification : ComponentActivity(){
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LoginDialog(){
+fun LoginDialog(userId:String){
     val dialogState : MutableState<Boolean> = remember{ mutableStateOf(true) }
     Dialog(
         onDismissRequest = { dialogState.value = false },
-        content = { CompleteDialogContent()},
+        content = { CompleteDialogContent(userId)},
         properties = DialogProperties(
             dismissOnBackPress = false,
             dismissOnClickOutside = false
@@ -93,7 +101,7 @@ var storedVerificationId: String = ""
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CompleteDialogContent(){
+fun CompleteDialogContent(userId: String){
     val context = LocalContext.current
     var phoneno by remember{ mutableStateOf(TextFieldValue("")) }
     var otp by remember{ mutableStateOf(TextFieldValue("")) }
@@ -140,7 +148,7 @@ fun CompleteDialogContent(){
 
             if(!isOtpVisible) {
                 Button(
-                    onClick = { onLoginClicked(context,phoneno.text) {
+                    onClick = { onLoginClicked(context,userId,phoneno.text) {
                         Log.d("phoneBook","setting otp visible")
                         isOtpVisible = true
                     }
@@ -155,7 +163,10 @@ fun CompleteDialogContent(){
 
             if(isOtpVisible) {
                 Button(
-                    onClick = { verifyPhoneNumberWithCode(context, storedVerificationId,otp.text) },
+                    onClick = { verifyPhoneNumberWithCode(context,userId, storedVerificationId,otp.text)
+                        val intent = Intent(context, PhoneNoVerification::class.java)
+                        ContextCompat.startActivity(context,intent,null)
+                              },
                     modifier = Modifier
                         .fillMaxWidth(1f)
                         .padding(top = 8.dp)
@@ -167,19 +178,19 @@ fun CompleteDialogContent(){
     }
 }
 
-private fun verifyPhoneNumberWithCode(context: Context, verificationId: String, code: String) {
+private fun verifyPhoneNumberWithCode(context: Context, userId: String,verificationId: String, code: String) {
     val credential = PhoneAuthProvider.getCredential(verificationId, code)
-    signInWithPhoneAuthCredential(context,credential)
+    signInWithPhoneAuthCredential(context,userId,credential)
 }
 
-fun onLoginClicked (context: Context, phoneNumber: String,onCodeSent: () -> Unit) {
+fun onLoginClicked (context: Context, userId: String,phoneNumber: String,onCodeSent: () -> Unit) {
 
     try {
         auth.setLanguageCode("en")
         val callback = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
             override fun onVerificationCompleted(credential: PhoneAuthCredential) {
                 Log.d("phoneBook", "verification completed")
-                signInWithPhoneAuthCredential(context, credential)
+                signInWithPhoneAuthCredential(context, userId ,credential)
             }
 
             override fun onVerificationFailed(p0: FirebaseException) {
@@ -214,7 +225,7 @@ fun onLoginClicked (context: Context, phoneNumber: String,onCodeSent: () -> Unit
     }
 }
 
-private fun signInWithPhoneAuthCredential(context: Context, credential: PhoneAuthCredential) {
+private fun signInWithPhoneAuthCredential(context: Context,userId: String, credential: PhoneAuthCredential) {
         try {
             context.getActivity()?.let {
                 auth.signInWithCredential(credential)
@@ -223,10 +234,23 @@ private fun signInWithPhoneAuthCredential(context: Context, credential: PhoneAut
                             // Sign in success, update UI with the signed-in user's information
                             val user = task.result?.user
                             Log.d("phoneBook", "logged in")
-                            val toast = Toast.makeText(context,"OTP verified successfully!!!",
-                                Toast.LENGTH_SHORT)
-                            toast.show()
-                        } else {
+                            val currentUser = auth.currentUser
+                            if (currentUser != null) {
+                                val database = FirebaseDatabase.getInstance()
+                                val usersRef = database.getReference("users")
+                                usersRef.child(userId).child("phoneNumber")
+                                    .setValue(currentUser.phoneNumber)
+
+                                Log.d("phoneBook", "logged in and phone number updated")
+
+                                val toast = Toast.makeText(
+                                    context,
+                                    "OTP verified successfully!!!",
+                                    Toast.LENGTH_SHORT
+                                )
+                                toast.show()
+                            }
+                        }else {
                             // Sign in failed, display a message and update the UI
                             if (task.exception is FirebaseAuthInvalidCredentialsException) {
                                 // The verification code entered was invalid
@@ -243,9 +267,10 @@ private fun signInWithPhoneAuthCredential(context: Context, credential: PhoneAut
         }
 }
 
+
 @Preview
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LoginDialogPreview(){
-    CompleteDialogContent()
+    CompleteDialogContent(userId ="TestUserId123")
 }

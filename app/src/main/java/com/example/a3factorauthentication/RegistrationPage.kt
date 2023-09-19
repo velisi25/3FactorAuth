@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -51,11 +53,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,16 +75,7 @@ import com.maxkeppeler.sheets.calendar.models.CalendarConfig
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
-
-data class User(
-    val name: String,
-    val birthDate: String,
-    val userName: String,
-    val email: String,
-    val password: String,
-    val confirmPassword: String
-)
+import com.example.a3factorauthentication.User
 
 
 class RegistrationPage : ComponentActivity() {
@@ -88,7 +86,7 @@ class RegistrationPage : ComponentActivity() {
             _3FactorAuthenticationTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = colorResource(id = R.color.purple_200)
+                    color = colorResource(id = R.color.lavender)
                 ) {
                     RegPage(this@RegistrationPage)
                 }
@@ -142,6 +140,7 @@ fun TextField(activity: ComponentActivity){
                             isError = false},
             label = { Text(text = "Full Name") },
             placeholder = { Text(text = "Enter your full name here")},
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
             isError = isError
         )
         if (text.text.isNotEmpty() && isError) {
@@ -194,7 +193,8 @@ fun TextField(activity: ComponentActivity){
             leadingIcon = {Icon(Icons.Rounded.Person,contentDescription = null)},
             onValueChange = { text2 = it },
             label = { Text(text = "UserName") },
-            placeholder = { Text(text = "Enter your Username") }
+            placeholder = { Text(text = "Enter your Username") },
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
         )
         var text3 by remember { mutableStateOf(TextFieldValue("")) }
         OutlinedTextField(
@@ -202,7 +202,8 @@ fun TextField(activity: ComponentActivity){
             leadingIcon = {Icon(Icons.Rounded.Email,contentDescription = null)},
             onValueChange = { text3 = it },
             label = { Text(text = "Email") },
-            placeholder = { Text(text = "Enter your emailid ") }
+            placeholder = { Text(text = "Enter your emailid ") },
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
         )
         var text4 by rememberSaveable { mutableStateOf("") }
         var text4Visibility by remember{ mutableStateOf(false) }
@@ -235,7 +236,7 @@ fun TextField(activity: ComponentActivity){
             },
             visualTransformation = if(text4Visibility) VisualTransformation.None
             else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next)
 
         )
         if (text4.isNotEmpty() && !isPasswordValid) {
@@ -273,7 +274,7 @@ fun TextField(activity: ComponentActivity){
             },
             visualTransformation = if(text5Visibility) VisualTransformation.None
             else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
             isError = text5.isNotEmpty() && !arePasswordsMatching
         )
         if (text5.isNotEmpty() && !arePasswordsMatching) {
@@ -327,13 +328,17 @@ fun TextField(activity: ComponentActivity){
                         userName = text2.text,
                         email = text3.text,
                         password = text4,
-                        confirmPassword = text5
+                        confirmPassword = text5,
+                        phoneNumber = null
+
                     )
+                    val userId = newUserRef.key
                     newUserRef.setValue(user)
 
 
                     val context = activity
                     val intent = Intent(context, PhoneNoVerification::class.java)
+                    intent.putExtra("userId",userId)
                     ContextCompat.startActivity(context,intent,null)
                 }
                 else{
@@ -348,6 +353,34 @@ fun TextField(activity: ComponentActivity){
                 )
             }
         }
+
+        Text(
+            text = buildAnnotatedString {
+                withStyle(
+                    style = SpanStyle(
+                        textDecoration = TextDecoration.Underline,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    append("Already had an account? Login")
+                    addStringAnnotation(
+                        tag = "clickable",
+                        annotation = "login",
+                        start = 0,
+                        end = length
+                    )
+                }
+            },
+            modifier = Modifier.clickable {
+                val context = activity
+                val navigate = Intent(context,LoginPage::class.java)
+                context.startActivity(navigate) // Navigate to the registration screen
+            },
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center
+        )
+
+
     }
 }
 

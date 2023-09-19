@@ -75,7 +75,11 @@ fun HomePage(activity:ComponentActivity){
                 color = Color.White,
             )
         }
-        Button(onClick = { /*TODO*/ },colors = ButtonDefaults.buttonColors(Color.Black), modifier = Modifier.align(alignment=Alignment.CenterHorizontally)) {
+        Button(onClick = {
+            val context = activity
+            val navigate = Intent(context,LoginPage::class.java)
+            context.startActivity(navigate)
+        },colors = ButtonDefaults.buttonColors(Color.Black), modifier = Modifier.align(alignment=Alignment.CenterHorizontally)) {
             Text(
                 text = stringResource(id = R.string.sign_in),
                 fontSize = 25.sp,
